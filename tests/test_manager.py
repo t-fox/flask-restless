@@ -293,6 +293,49 @@ class TestAPIManager(ManagerTestBase):
         self.manager.create_api(self.Person, collection_name='people')
         assert model_for('people') is self.Person
 
+    def test_hide_disallowed_endpoints(self):
+        """Tests that the `hide_disallowed_endpoints` and
+        `hide_unauthenticated_endpoints` arguments correctly hide endpoints
+        which would normally return a :http:statuscode:`405` or
+        :http:statuscode:`403` with a :http:statuscode:`404`.
+
+        """
+        self.manager.create_api(self.Person, methods=['GET', 'POST'],
+                                hide_disallowed_endpoints=True)
+
+        class auth_func(object):
+            x = 0
+            def __call__(params):
+                x += 1
+                if x % 2 == 0:
+                    raise ProcessingException(status_code=403,
+                                              message='Permission denied')
+                return NO_CHANGE
+
+        self.manager.create_api(self.Person, methods=['GET', 'POST'],
+                                hide_unauthenticated_endpoints=True,
+                                preprocessors=dict(POST=[auth_func]),
+                                url_prefix='/auth')
+        # first test disallowed functions
+        response = self.app.get('/api/person')
+        self.assertNotEqual(404, response.status_code)
+        response = self.app.post('/api/person', data=dumps(dict(name='foo')))
+        self.assertNotEqual(404, response.status_code)
+        response = self.app.patch('/api/person/1',
+                                  data=dumps(dict(name='bar')))
+        self.assertEqual(404, response.status_code)
+        response = self.app.put('/api/person/1', data=dumps(dict(name='bar')))
+        self.assertEqual(404, response.status_code)
+        response = self.app.delete('/api/person/1')
+        self.assertEqual(404, response.status_code)
+        # now test unauthenticated functions
+        response = self.app.get('/auth/person')
+        self.assertNotEqual(404, response.status_code)
+        response = self.app.post('/auth/person', data=dumps(dict(name='foo')))
+        self.assertNotEqual(404, response.status_code)
+        response = self.app.post('/auth/person', data=dumps(dict(name='foo')))
+        self.assertEqual(404, response.status_code)
+
     @raises(ValueError)
     def test_model_for_nonexistent(self):
         """Tests that attempting to get the model for a nonexistent collection

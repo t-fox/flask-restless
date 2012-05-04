@@ -15,6 +15,10 @@ Version 1.0.0-dev
 
 Not yet released.
 
+- #60: added the ``hide_endpoints`` keyword argument to
+  :meth:`APIManager.create_api_blueprint` to hide disallowed HTTP methods
+  behind a :http:statuscode:`404` response instead of a :http:statuscode:`405`
+  response.
 - #363 (partial solution): don't use ``COUNT`` on requests that don't require
   pagination.
 - #404: **Major overhaul of Flask-Restless to support JSON API**.
