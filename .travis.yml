@@ -12,9 +12,21 @@ python:
   - "pypy"
   - "pypy3"
 
+addons:
+  apt:
+    packages:
+      # Need to update the installed version of PostgreSQL, because it doesn't
+      # implement all of the network operators (specifically the && operator).
+      - postgresql-9.5
+
+before_install:
+  # Determine whether we're using PyPy, as it determines which requirements
+  # file we will use.
+  - if (python --version 2>&1 | grep PyPy > /dev/null); then export REQUIREMENTS=requirements-test-pypy.txt; else export REQUIREMENTS=requirements-test-cpython.txt; fi
+
 install:
   - pip install --upgrade pip
-  - pip install -r requirements.txt
+  - pip install -r $REQUIREMENTS
   - pip install coveralls
 
 script:
