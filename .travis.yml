@@ -17,7 +17,7 @@ addons:
     packages:
       # Need to update the installed version of PostgreSQL, because it doesn't
       # implement all of the network operators (specifically the && operator).
-      - postgresql-9.5
+      - postgresql-9.4
 
 before_install:
   # Determine whether we're using PyPy, as it determines which requirements
